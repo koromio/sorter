@@ -1,0 +1,25 @@
+--cpu Cortex-M3
+"selector\startup_stm32f103xb.o"
+"selector\main.o"
+"selector\gpio.o"
+"selector\tim.o"
+"selector\stm32f1xx_it.o"
+"selector\stm32f1xx_hal_msp.o"
+"selector\stm32f1xx_hal_gpio_ex.o"
+"selector\stm32f1xx_hal_tim.o"
+"selector\stm32f1xx_hal_tim_ex.o"
+"selector\stm32f1xx_hal.o"
+"selector\stm32f1xx_hal_rcc.o"
+"selector\stm32f1xx_hal_rcc_ex.o"
+"selector\stm32f1xx_hal_gpio.o"
+"selector\stm32f1xx_hal_dma.o"
+"selector\stm32f1xx_hal_cortex.o"
+"selector\stm32f1xx_hal_pwr.o"
+"selector\stm32f1xx_hal_flash.o"
+"selector\stm32f1xx_hal_flash_ex.o"
+"selector\stm32f1xx_hal_exti.o"
+"selector\system_stm32f1xx.o"
+--strict --scatter "selector\selector.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "selector.map" -o selector\selector.axf

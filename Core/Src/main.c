@@ -128,16 +128,18 @@ int main(void)
       //颜色判断
       if(Red_Val > Green_Val+50)
       {
-          HAL_Delay(1000);//等待物品传送
+          Set_Servo_Angle(120);
+          HAL_Delay(2000);//等待物品传送
           Set_Servo_Angle(0);//转到0度
-          HAL_Delay(400);
+          HAL_Delay(2000);
           Set_Servo_Angle(90);//转回90度
       }
       else if(Green_Val > Red_Val+50)
       {
-          HAL_Delay(1000);//等待物品传送
+          Set_Servo_Angle(60);
+          HAL_Delay(2000);//等待物品传送
           Set_Servo_Angle(180);//转到180度
-          HAL_Delay(400);
+          HAL_Delay(2000);
           Set_Servo_Angle(90);//转回90度
       }
   }

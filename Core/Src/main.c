@@ -144,16 +144,16 @@ int main(void)
       {
           Servo_Move_To(120);
           HAL_Delay(2000);//等待物品传送
-          Servo_Move_To(30);
-          HAL_Delay(2000);
+          Servo_Move_To(60);
+          HAL_Delay(1000);
           Servo_Move_To(90);
       }
       else if(Green_Val > Red_Val+1000)
       {
           Servo_Move_To(60);
           HAL_Delay(2000);//等待物品传送
-          Servo_Move_To(150);
-          HAL_Delay(2000);
+          Servo_Move_To(120);
+          HAL_Delay(1000);
           Servo_Move_To(90);
       }
   }

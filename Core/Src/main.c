@@ -20,6 +20,7 @@
 #include "main.h"
 #include "tim.h"
 #include "gpio.h"
+#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -45,6 +46,7 @@
 
 /* USER CODE BEGIN PV */
 uint32_t Color_Frequency_Count = 0;
+uint16_t current_pulse = 1500;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,12 +57,29 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void Set_Servo_Angle(uint16_t angle)
+// 1. 在文件开头（main函数外面）定义一个全局变量，记录当前脉宽
+void Servo_Move_To(uint16_t target_angle)
 {
-    // 将角度转换为占空比
-    uint16_t pulse = (angle * 2000 / 180) + 500; // 0.5ms ~ 2.5ms 对应 0° ~ 180°
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, pulse);
+    // 计算目标角度对应的目标脉宽
+    uint16_t target_pulse = (target_angle * 2000 / 180) + 500;
+
+    // 自动判断：当前脉宽还没达到目标脉宽时，进入循环
+    while (current_pulse != target_pulse)
+    {
+        if (current_pulse < target_pulse) {
+            current_pulse++; // 当前位置比目标小，就递增
+        } else {
+            current_pulse--; // 当前位置比目标大，就递减
+        }
+
+        // 直接向定时器寄存器写入最新的微步脉宽
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, current_pulse);
+
+        // 控速延迟（1~5ms）
+        HAL_Delay(1);
+    }
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -97,7 +116,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
   HAL_TIM_IC_Start_IT(&htim3,TIM_CHANNEL_1);
-  Set_Servo_Angle(90);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -124,19 +142,19 @@ int main(void)
       //颜色判断
       if(Red_Val > Green_Val+2000)
       {
-          Set_Servo_Angle(120);
+          Servo_Move_To(120);
           HAL_Delay(2000);//等待物品传送
-          Set_Servo_Angle(0);//转到0度
+          Servo_Move_To(30);
           HAL_Delay(2000);
-          Set_Servo_Angle(90);//转回90度
+          Servo_Move_To(90);
       }
       else if(Green_Val > Red_Val+1000)
       {
-          Set_Servo_Angle(60);
+          Servo_Move_To(60);
           HAL_Delay(2000);//等待物品传送
-          Set_Servo_Angle(180);//转到180度
+          Servo_Move_To(150);
           HAL_Delay(2000);
-          Set_Servo_Angle(90);//转回90度
+          Servo_Move_To(90);
       }
   }
   /* USER CODE END 3 */

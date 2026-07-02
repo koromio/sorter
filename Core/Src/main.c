@@ -107,10 +107,6 @@ int main(void)
       uint32_t Red_Val=0;
       uint32_t Green_Val=0;
 
-      //传送带始终开启
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);//PA0高电平
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);//PA1低电平
-
       //切换到红色通道，数100ms的脉冲数
       HAL_GPIO_WritePin(GPIOB,GPIO_PIN_0,GPIO_PIN_RESET);//S2=0
       HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET);//S3=0

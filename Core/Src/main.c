@@ -60,8 +60,7 @@ void SystemClock_Config(void);
 void Servo_Move_To(uint16_t target_angle)
 {
     // 计算目标角度对应的目标脉宽
-    uint16_t target_pulse = (uint16_t)(500 + (target_angle * 2000 / 180));
-
+    uint16_t target_pulse = (target_angle * 2000 / 180) + 500;
     // 自动判断：当前脉宽还没达到目标脉宽时，进入循环
     while (current_pulse != target_pulse)
     {
@@ -79,32 +78,6 @@ void Servo_Move_To(uint16_t target_angle)
     }
 }
 /* ================= 电机控制核心动作函数 ================= */
-
-// 🚂 动作一：让传送带开始向前全速运转（启动）
-void Conveyor_Start(void)
-{
-    // 让 PA0 喷出 3.3V 高电平，发送给 L298N 的 IN1 [CSDN, 2024-03-24]
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
-    // 让 PA1 保持 0V 低电平，发送给 L298N 的 IN2 [CSDN, 2024-03-24]
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-}
-
-// 🛑 动作二：让传送带瞬间急停熄火（停止）
-void Conveyor_Stop(void)
-{
-    // 将 PA0 和 PA1 同时拉低到 0V 绝对低电平 [CSDN, 2024-03-24]
-    // L298N 内部的大闸门瞬间关闭，切断电池流入电机的电流，实现秒级急停！
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-}
-
-// 🔄 动作三：让传送带往相反方向倒退（反转 - 留作调试应急或卡料排出备用）
-void Conveyor_Reverse(void)
-{
-    // 把方向信号反过来：PA0 送低电平，PA1 送高电平 [CSDN, 2024-03-24]
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-}
 
 
 /* USER CODE END 0 */
@@ -144,6 +117,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_4);
   HAL_TIM_IC_Start_IT(&htim3,TIM_CHANNEL_1);
+  Servo_Move_To(90);
   /* USER CODE END 2 */
 
   /* Infinite loop */

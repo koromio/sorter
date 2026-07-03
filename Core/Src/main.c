@@ -140,7 +140,7 @@ int main(void)
       Green_Val=Color_Frequency_Count;
 
       //颜色判断
-      if(Red_Val > Green_Val+2000)
+      if(Red_Val > Green_Val+5000)
       {
           Servo_Move_To(120);
           HAL_Delay(2000);//等待物品传送

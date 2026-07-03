@@ -20,7 +20,6 @@
 #include "main.h"
 #include "tim.h"
 #include "gpio.h"
-#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -46,7 +45,7 @@
 
 /* USER CODE BEGIN PV */
 uint32_t Color_Frequency_Count = 0;
-uint16_t current_pulse = 1500;
+uint16_t current_pulse = 150;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,7 +60,7 @@ void SystemClock_Config(void);
 void Servo_Move_To(uint16_t target_angle)
 {
     // 计算目标角度对应的目标脉宽
-    uint16_t target_pulse = (target_angle * 2000 / 180) + 500;
+    uint16_t target_pulse = (uint16_t)(50 + (target_angle * 200 / 180));
 
     // 自动判断：当前脉宽还没达到目标脉宽时，进入循环
     while (current_pulse != target_pulse)
@@ -79,6 +78,34 @@ void Servo_Move_To(uint16_t target_angle)
         HAL_Delay(1);
     }
 }
+/* ================= 电机控制核心动作函数 ================= */
+
+// 🚂 动作一：让传送带开始向前全速运转（启动）
+void Conveyor_Start(void)
+{
+    // 让 PA0 喷出 3.3V 高电平，发送给 L298N 的 IN1 [CSDN, 2024-03-24]
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
+    // 让 PA1 保持 0V 低电平，发送给 L298N 的 IN2 [CSDN, 2024-03-24]
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+}
+
+// 🛑 动作二：让传送带瞬间急停熄火（停止）
+void Conveyor_Stop(void)
+{
+    // 将 PA0 和 PA1 同时拉低到 0V 绝对低电平 [CSDN, 2024-03-24]
+    // L298N 内部的大闸门瞬间关闭，切断电池流入电机的电流，实现秒级急停！
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+}
+
+// 🔄 动作三：让传送带往相反方向倒退（反转 - 留作调试应急或卡料排出备用）
+void Conveyor_Reverse(void)
+{
+    // 把方向信号反过来：PA0 送低电平，PA1 送高电平 [CSDN, 2024-03-24]
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+}
+
 
 /* USER CODE END 0 */
 
@@ -115,6 +142,7 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_4);
   HAL_TIM_IC_Start_IT(&htim3,TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
@@ -125,37 +153,53 @@ int main(void)
       uint32_t Red_Val=0;
       uint32_t Green_Val=0;
 
-      //切换到红色通道，数100ms的脉冲数
-      HAL_GPIO_WritePin(GPIOB,GPIO_PIN_0,GPIO_PIN_RESET);//S2=0
-      HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET);//S3=0
-      Color_Frequency_Count=0;
-      HAL_Delay(100);
-      Red_Val=Color_Frequency_Count;
+      if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET)
+         {
+             HAL_Delay(20); // 软件消抖
 
-      //切换到绿色通道，数100ms的脉冲数
-      HAL_GPIO_WritePin(GPIOB,GPIO_PIN_0,GPIO_PIN_SET);//S2=1
-      HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_SET);//S3=1
-      Color_Frequency_Count=0;
-      HAL_Delay(100);
-      Green_Val=Color_Frequency_Count;
+             // 2. 再次确认按键是否真的按下
+             if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET)
+             {
+                 // 3. 翻转 PC13 的电平（亮变灭，灭变亮）
+                HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+                //切换到红色通道，数100ms的脉冲数
+                HAL_GPIO_WritePin(GPIOB,GPIO_PIN_0,GPIO_PIN_RESET);//S2=0
+                HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET);//S3=0
+                Color_Frequency_Count=0;
+                HAL_Delay(100);
+                Red_Val=Color_Frequency_Count;
 
-      //颜色判断
-      if(Red_Val > Green_Val+5000)
-      {
-          Servo_Move_To(120);
-          HAL_Delay(2000);//等待物品传送
-          Servo_Move_To(60);
-          HAL_Delay(1000);
-          Servo_Move_To(90);
-      }
-      else if(Green_Val > Red_Val+1000)
-      {
-          Servo_Move_To(60);
-          HAL_Delay(2000);//等待物品传送
-          Servo_Move_To(120);
-          HAL_Delay(1000);
-          Servo_Move_To(90);
-      }
+                //切换到绿色通道，数100ms的脉冲数
+                HAL_GPIO_WritePin(GPIOB,GPIO_PIN_0,GPIO_PIN_SET);//S2=1
+                HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_SET);//S3=1
+                Color_Frequency_Count=0;
+                HAL_Delay(100);
+                Green_Val=Color_Frequency_Count;
+
+                //颜色判断
+                if(Red_Val > Green_Val+5000)
+                {
+                    Servo_Move_To(120);
+                    HAL_Delay(2000);//等待物品传送
+                    Servo_Move_To(60);
+                    HAL_Delay(1000);
+                    Servo_Move_To(90);
+                }
+                else if(Green_Val > Red_Val+1000)
+                {
+                    Servo_Move_To(60);
+                    HAL_Delay(2000);//等待物品传送
+                    Servo_Move_To(120);
+                    HAL_Delay(1000);
+                    Servo_Move_To(90);
+                }
+                HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+             }
+             else HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+         }
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }

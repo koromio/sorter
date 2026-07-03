@@ -45,7 +45,7 @@
 
 /* USER CODE BEGIN PV */
 uint32_t Color_Frequency_Count = 0;
-uint16_t current_pulse = 150;
+uint16_t current_pulse = 1500;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,7 +60,7 @@ void SystemClock_Config(void);
 void Servo_Move_To(uint16_t target_angle)
 {
     // 计算目标角度对应的目标脉宽
-    uint16_t target_pulse = (uint16_t)(50 + (target_angle * 200 / 180));
+    uint16_t target_pulse = (uint16_t)(500 + (target_angle * 2000 / 180));
 
     // 自动判断：当前脉宽还没达到目标脉宽时，进入循环
     while (current_pulse != target_pulse)

@@ -78,7 +78,27 @@ void Servo_Move_To(uint16_t target_angle)
     }
 }
 /* ================= 电机控制核心动作函数 ================= */
-
+void Motor_Set_Speed(int16_t speed)
+{
+    if(speed>0)
+    {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);//IN1=1
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);//IN2=0
+        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, speed);
+    }
+    else if(speed<0)
+    {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);//IN1=0
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);//IN2=1
+        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, -speed);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);//IN1=0
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);//IN2=0
+        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+    }
+}
 
 /* USER CODE END 0 */
 
@@ -113,11 +133,11 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_4);
   HAL_TIM_IC_Start_IT(&htim3,TIM_CHANNEL_1);
-  Servo_Move_To(90);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -154,19 +174,24 @@ int main(void)
                 if(Red_Val > Green_Val+5000)
                 {
                     Servo_Move_To(120);
-                    HAL_Delay(2000);//等待物品传送
+                    Motor_Set_Speed(-300);
+                    HAL_Delay(1000);//等待物品传送
                     Servo_Move_To(60);
+									  Motor_Set_Speed(0);
                     HAL_Delay(1000);
                     Servo_Move_To(90);
                 }
                 else if(Green_Val > Red_Val+1000)
                 {
                     Servo_Move_To(60);
-                    HAL_Delay(2000);//等待物品传送
+                    Motor_Set_Speed(-300);
+                    HAL_Delay(1000);//等待物品传送
                     Servo_Move_To(120);
+									  Motor_Set_Speed(0);
                     HAL_Delay(1000);
                     Servo_Move_To(90);
                 }
+                Motor_Set_Speed(0);
                 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
              }
              else HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
